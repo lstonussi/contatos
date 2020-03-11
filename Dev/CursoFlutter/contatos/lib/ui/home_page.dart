@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:contatos/helpers/contact_helper.dart';
 import 'package:contatos/ui/contact_page.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+enum OrderOptions { orderaz, orderza }
 
 class HomePage extends StatefulWidget {
   @override
@@ -27,6 +30,21 @@ class _HomePageState extends State<HomePage> {
         title: Text('Contatos'),
         backgroundColor: Colors.red,
         centerTitle: true,
+        actions: <Widget>[
+          PopupMenuButton(
+            itemBuilder: (context) => <PopupMenuEntry<OrderOptions>>[
+              const PopupMenuItem<OrderOptions>(
+                child: Text('Ordernar de A-Z'),
+                value: OrderOptions.orderaz,
+              ),
+              const PopupMenuItem<OrderOptions>(
+                child: Text('Ordernar de Z-A'),
+                value: OrderOptions.orderza,
+              )
+            ],
+            onSelected: _orderList,
+          )
+        ],
       ),
       backgroundColor: Colors.white,
       floatingActionButton: FloatingActionButton(
@@ -45,83 +63,48 @@ class _HomePageState extends State<HomePage> {
 
   Widget _contactCard(BuildContext context, int index) {
     return GestureDetector(
-      child: Dismissible(
-        key: Key(contacts[index].id.toString()),
-        background: Container(
-          color: Colors.red,
-          child: Align(
-            alignment: Alignment(-0.9, 0),
-            child: Icon(
-              Icons.delete,
-              color: Colors.white,
-            ),
-          ),
-        ),
-        direction: DismissDirection.startToEnd,
-        onDismissed: (direction) {
-          setState(() {
-            helper.deleteContact(contacts[index].id);
-
-            final snack = SnackBar(
-              content: Text('Tarefa $contacts[index].name removido!'),
-              action: SnackBarAction(
-                label: 'Desfazer',
-                onPressed: () {
-                  setState(() {
-                    //TODO: FAZER o "desfazer"
-                  });
-                },
+      child: Card(
+        child: Padding(
+          padding: EdgeInsets.all(10),
+          child: Row(
+            children: <Widget>[
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    image: DecorationImage(
+                        image: contacts[index].img != null
+                            ? FileImage(File(contacts[index].img))
+                            : AssetImage('images/avatar.png'),
+                        fit: BoxFit.cover)),
               ),
-              duration: Duration(seconds: 2),
-            );
-            //Remove a snackbar para exibir a proxima
-            //TODO: Ajustar
-            Scaffold.of(context).removeCurrentSnackBar();
-            Scaffold.of(context).showSnackBar(snack);
-          });
-        },
-        child: Card(
-          child: Padding(
-            padding: EdgeInsets.all(10),
-            child: Row(
-              children: <Widget>[
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      image: DecorationImage(
-                          image: contacts[index].img != null
-                              ? FileImage(File(contacts[index].img))
-                              : AssetImage('images/avatar.png'))),
+              Padding(
+                padding: EdgeInsets.only(left: 10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                          contacts[index].name,
+                          style: TextStyle(
+                              fontSize: 22, fontWeight: FontWeight.bold),
+                        ) ??
+                        '',
+                    Text(
+                          contacts[index].email,
+                          style: TextStyle(
+                              fontSize: 18, fontWeight: FontWeight.bold),
+                        ) ??
+                        '',
+                    Text(
+                          contacts[index].phone,
+                          style: TextStyle(fontSize: 18),
+                        ) ??
+                        '',
+                  ],
                 ),
-                Padding(
-                  padding: EdgeInsets.only(left: 10),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Text(
-                            contacts[index].name,
-                            style: TextStyle(
-                                fontSize: 22, fontWeight: FontWeight.bold),
-                          ) ??
-                          '',
-                      Text(
-                            contacts[index].email,
-                            style: TextStyle(
-                                fontSize: 18, fontWeight: FontWeight.bold),
-                          ) ??
-                          '',
-                      Text(
-                            contacts[index].phone,
-                            style: TextStyle(fontSize: 18),
-                          ) ??
-                          '',
-                    ],
-                  ),
-                )
-              ],
-            ),
+              )
+            ],
           ),
         ),
       ),
@@ -171,7 +154,10 @@ class _HomePageState extends State<HomePage> {
                           'Ligar',
                           style: TextStyle(color: Colors.red, fontSize: 20),
                         ),
-                        onPressed: () {},
+                        onPressed: () {
+                          launch('tel: ${contacts[index].phone}');
+                          Navigator.pop(context);
+                        },
                       ),
                     ),
                     Padding(
@@ -209,5 +195,23 @@ class _HomePageState extends State<HomePage> {
             },
           );
         });
+  }
+
+  void _orderList(OrderOptions value) {
+    switch (value) {
+      case OrderOptions.orderaz:
+        contacts.sort((a, b){
+          return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+        });
+        break;
+      case OrderOptions.orderza:
+        contacts.sort((a, b){
+          return b.name.toLowerCase().compareTo(a.name.toLowerCase());
+        });
+        break;
+    }
+    setState(() {
+
+    });
   }
 }
